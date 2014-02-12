@@ -445,6 +445,17 @@ function! s:lisp._eval(...) dict abort
         unlet exp
       endfor
       return V
+    elseif m == 'map' " (map exp exp*)
+      let exps = []
+      for exp in self._eval(X[2], env)
+        if exists("l:VV")
+          unlet VV
+        endif
+        let VV = self._eval(exp, env)
+        call add(exps, call(s:deref(self._eval(X[1])), [VV]))
+        unlet exp
+      endfor
+      return exps
     elseif m == 'begin' " (begin exp*)
       let V = 0
       for exp in X[1:]
@@ -466,7 +477,7 @@ function! s:lisp._eval(...) dict abort
         unlet exp
       endfor
       call call('s:echon', exps)
-      return ''
+      return exps
     elseif m == 'newline'
       return self._eval(["display", "\n"] + X[1:], env)
     elseif m == 'vim-echo' || m == 'print'
@@ -476,7 +487,7 @@ function! s:lisp._eval(...) dict abort
         unlet exp
       endfor
       call call('s:echo', exps)
-      return ''
+      return exps
     elseif m == 'vim-call'
       let exps = []
       for exp in X[2:]
